@@ -8,40 +8,94 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 20px;
-        }
-        h1 {
-            text-align: center;
-        }
-        form {
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
             display: flex;
+            flex-direction: column;
+            align-items: center;
             justify-content: center;
+            height: 100vh;
+            color: #333;
+        }
+
+        h1 {
+            color: #4CAF50;
             margin-bottom: 20px;
         }
-        input, button {
-            margin: 0 5px;
-            padding: 10px;
-            font-size: 16px;
+
+        .container {
+            width: 80%;
+            max-width: 800px;
+            margin: 20px;
+            text-align: center;
         }
+
+        .form-container {
+            margin-bottom: 20px;
+        }
+
+        input, button {
+            padding: 12px;
+            font-size: 16px;
+            border: 2px solid #4CAF50;
+            border-radius: 4px;
+            margin: 5px;
+        }
+
+        input:focus, button:focus {
+            outline: none;
+            border-color: #3e8e41;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
         canvas {
             max-width: 100%;
-            margin: auto;
+            height: auto;
+            margin-top: 20px;
         }
+
+        .loading {
+            color: #4CAF50;
+            font-size: 18px;
+            font-weight: bold;
+            display: none;
+        }
+
+        .error {
+            color: red;
+            font-size: 16px;
+            display: none;
+        }
+
     </style>
 </head>
 <body>
-    <h1>Stock Tracker</h1>
-    <form id="stock-form">
-        <input type="text" id="symbol" placeholder="Enter Stock Symbol (e.g., AAPL)" required>
-        <button type="submit">Get Data</button>
-    </form>
-    <canvas id="stockChart" width="400" height="200"></canvas>
+    <div class="container">
+        <h1>Stock Tracker</h1>
+        <div class="form-container">
+            <input type="text" id="symbol" placeholder="Enter Stock Symbol (e.g., AAPL)" required>
+            <button type="submit" id="submitBtn">Get Data</button>
+        </div>
+        <div class="loading" id="loadingMessage">Loading...</div>
+        <div class="error" id="errorMessage">Invalid stock symbol or error fetching data.</div>
+        <canvas id="stockChart" width="400" height="200"></canvas>
+    </div>
 
     <script>
         const apiKey = "your_alpha_vantage_api_key"; // Replace with your API key
         const apiUrl = "https://www.alphavantage.co/query";
 
-        document.getElementById("stock-form").addEventListener("submit", async function(event) {
+        document.getElementById("submitBtn").addEventListener("click", async function(event) {
             event.preventDefault();
             const symbol = document.getElementById("symbol").value.trim();
             if (!symbol) {
@@ -49,14 +103,19 @@
                 return;
             }
 
+            // Show loading message
+            document.getElementById("loadingMessage").style.display = "block";
+            document.getElementById("errorMessage").style.display = "none";
+            document.getElementById("symbol").disabled = true;
+            document.getElementById("submitBtn").disabled = true;
+
             try {
                 // Fetch data from Alpha Vantage API
                 const response = await fetch(`${apiUrl}?function=TIME_SERIES_DAILY&symbol=${symbol}&apikey=${apiKey}`);
                 const data = await response.json();
 
                 if (!data["Time Series (Daily)"]) {
-                    alert("Invalid stock symbol or API limit reached.");
-                    return;
+                    throw new Error("Invalid stock symbol or API limit reached.");
                 }
 
                 // Extract dates and prices
@@ -73,8 +132,8 @@
                         datasets: [{
                             label: `Stock Prices for ${symbol}`,
                             data: prices,
-                            borderColor: "blue",
-                            backgroundColor: "rgba(0, 0, 255, 0.2)",
+                            borderColor: "#4CAF50",
+                            backgroundColor: "rgba(76, 175, 80, 0.2)",
                             fill: true
                         }]
                     },
@@ -90,9 +149,20 @@
                         }
                     }
                 });
+
+                // Hide loading message and enable the input again
+                document.getElementById("loadingMessage").style.display = "none";
+                document.getElementById("symbol").disabled = false;
+                document.getElementById("submitBtn").disabled = false;
+
             } catch (error) {
                 console.error("Error fetching stock data:", error);
-                alert("Something went wrong. Please try again.");
+                document.getElementById("errorMessage").style.display = "block";
+
+                // Hide loading message and enable the input again
+                document.getElementById("loadingMessage").style.display = "none";
+                document.getElementById("symbol").disabled = false;
+                document.getElementById("submitBtn").disabled = false;
             }
         });
     </script>
